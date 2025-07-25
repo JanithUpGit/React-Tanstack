@@ -1,6 +1,6 @@
 import { useRef,useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import fetchEvents from "../../util/Http.js";
+import {fetchEvents} from "../../util/Http.js";
 import LoadingIndicator from "../UI/LoadingIndicator.jsx";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
 import EventItem from "./EventItem.jsx";
@@ -8,7 +8,7 @@ import EventItem from "./EventItem.jsx";
 export default function FindEventSection() {
   const searchElement = useRef();
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState();
   const { isLoading, isError, error, data } = useQuery({
     queryKey: ["events",{search: searchTerm}],
     queryFn: ({signal}) => fetchEvents({signal,searchTerm}),

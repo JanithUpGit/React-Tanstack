@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 import EventItem from './EventItem.jsx';
-import fetchEvents from '../../util/Http.js';
+import {fetchEvents} from '../../util/Http.js';
+
 
 export default function NewEventsSection() {
   

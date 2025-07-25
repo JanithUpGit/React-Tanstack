@@ -1,8 +1,17 @@
-import { Link, Outlet } from 'react-router-dom';
-
+import { Link, Outlet, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Header from '../Header.jsx';
+import { fetchEvent } from '../../util/Http.js';
 
 export default function EventDetails() {
+  const params = useParams();
+
+  const { isLoading, isError, error, data } = useQuery({
+    queryKey: ['event',params.id],
+    queryFn: ({signal})=> fetchEvent({signal,id:params.id}),
+  });
+
+
   return (
     <>
       <Outlet />
@@ -20,7 +29,7 @@ export default function EventDetails() {
           </nav>
         </header>
         <div id="event-details-content">
-          <img src="" alt="" />
+          <img src="http://localhost:3000" alt="" />
           <div id="event-details-info">
             <div>
               <p id="event-details-location">EVENT LOCATION</p>
