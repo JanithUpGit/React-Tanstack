@@ -1,17 +1,44 @@
 import { Link, Outlet, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Header from "../Header.jsx";
 import { fetchEvent } from "../../util/Http.js";
-
+import { deleteEvent, queryClient } from "../../util/Http.js";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import Model from "../UI/Modal.jsx";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
 
 export default function EventDetails() {
+  const [isDeleting, setIsDeleting] = useState(false);
   const params = useParams();
+  const navigate = useNavigate();
 
   const { isLoading, isError, error, data } = useQuery({
     queryKey: ["event", params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
+
+  const { mutate } = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["events"],
+        refetchType: "none",
+      });
+      navigate("/events");
+    },
+  });
+
+  function handleStartDelete() {
+    setIsDeleting(true);
+  }
+  function handleCancelDelete() {
+    setIsDeleting(false);
+  }
+
+  function handleDelete() {
+    mutate({ id: params.id });
+  }
 
   let content; // Declare content, but don't initialize with data yet
 
@@ -21,7 +48,8 @@ export default function EventDetails() {
         <p>Fetching event data...</p>
       </div>
     );
-  } else if (isError) { // Use else if here to ensure only one state is rendered
+  } else if (isError) {
+    // Use else if here to ensure only one state is rendered
     content = (
       <div id="event-details-content" className="center">
         <ErrorBlock
@@ -33,19 +61,18 @@ export default function EventDetails() {
         />
       </div>
     );
-  } else if (data) { 
-    
-   const formattedDate = new Date(data.date).toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  } else if (data) {
+    const formattedDate = new Date(data.date).toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
     content = (
       <>
         <header>
           <h1>{data.title}</h1> {/* Now data is guaranteed to exist */}
           <nav>
-            <button>Delete</button>
+            <button onClick={handleStartDelete}>Delete</button>
             <Link to="edit">Edit</Link>
           </nav>
         </header>
@@ -69,6 +96,17 @@ export default function EventDetails() {
 
   return (
     <>
+      {isDeleting &&(
+        <Model onClose={handleCancelDelete}>
+        <h2>Are you sure?</h2>
+        <p>
+          Do you really want to delete this event? this action cannot be undone.
+        </p>
+        <div className="form-actions">
+          <button onClick={handleCancelDelete} className="button-text">Cancel</button>
+          <button onClick={handleDelete} className="button">Delete</button>
+        </div>
+      </Model>)}
       <Outlet />
       <Header>
         <Link to="/events" className="nav-item">
