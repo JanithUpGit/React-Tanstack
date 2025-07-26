@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useQuery ,useMutation} from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 import Modal from "../UI/Modal.jsx";
 import EventForm from "./EventForm.jsx";
@@ -7,7 +7,6 @@ import EventForm from "./EventForm.jsx";
 import { fetchEvent, updateEvent, queryClient } from "../../util/Http.js";
 import LoadingIndicator from "../UI/LoadingIndicator.jsx";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
-
 
 export default function EditEvent() {
   const navigate = useNavigate();
@@ -17,17 +16,26 @@ export default function EditEvent() {
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
 
-  const { mutate, isPending, isError: isErrorUpdate, error: errorUpdate } =
-    useMutation({
-      mutationFn: updateEvent,
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ["events"],
-          refetchType: "none",
-        });
-        navigate("/events");
-      },
-    });
+  const {
+    mutate,
+    isError: isErrorUpdate,
+    error: errorUpdate,
+  } = useMutation({
+    mutationFn: updateEvent,
+    onMutate: async (data) => {
+      const newEvent = data.event;
+      await queryClient.cancelQueries({ queryKey: ["events", params.id] });
+      const previousEvent = queryClient.getQueryData(["events", params.id]);
+      queryClient.setQueriesData(["events", params.id], newEvent);
+      return { previousEvent };
+    },
+    onError: (error, data, context) => {
+      queryClient.setQueryData(["events", params.id], context.previousEvent);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["events", params.id]);
+    },
+  });
 
   function handleSubmit(formData) {
     mutate({ id: params.id, event: formData });
