@@ -1,26 +1,24 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, redirect, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 import Modal from "../UI/Modal.jsx";
 import EventForm from "./EventForm.jsx";
 
 import { fetchEvent, updateEvent, queryClient } from "../../util/Http.js";
-import LoadingIndicator from "../UI/LoadingIndicator.jsx";
+// import LoadingIndicator from "../UI/LoadingIndicator.jsx";
 import ErrorBlock from "../UI/ErrorBlock.jsx";
 
 export default function EditEvent() {
   const navigate = useNavigate();
   const params = useParams();
-  const { data, isLoading, isError, error } = useQuery({
+
+  const { data, isError, error } = useQuery({
     queryKey: ["event", params.id],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id }),
   });
 
-  const {
-    mutate,
-    isError: isErrorUpdate,
-    error: errorUpdate,
-  } = useMutation({
+  
+  const { mutate } = useMutation({
     mutationFn: updateEvent,
     onMutate: async (data) => {
       const newEvent = data.event;
@@ -46,13 +44,6 @@ export default function EditEvent() {
   }
   let content;
 
-  if (isLoading) {
-    content = (
-      <div className="center">
-        <LoadingIndicator />{" "}
-      </div>
-    );
-  }
 
   if (isError) {
     content = (
@@ -86,4 +77,20 @@ export default function EditEvent() {
     );
   }
   return <Modal onClose={handleClose}>{content}</Modal>;
+}
+
+
+export function loader({params}){
+   return queryClient.fetchQuery({
+    queryKey:['events',params.id],
+    queryFn:({signal}) => fetchEvent({signal,id: params.id}),
+   });
+}
+
+export async function action({request,params}){
+  const formData = await request.formData();
+  const updatedEventData = Object.fromEntries(formData);
+  updateEvent({id:params.id,event:updatedEventData});
+  queryClient.invalidateQueries(['events']);
+  return redirect('.. /')
 }
